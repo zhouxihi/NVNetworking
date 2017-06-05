@@ -76,3 +76,26 @@
 ```
 
 ##带任务返回 缓存策略的 自定义get请求
+```objective-c
+/**
+ 带任务返回 进度回调 缓存策略的 自定义 get请求
+
+ @param api api
+ @param parameters object参数
+ @param requestSerializer 请求样式
+ @param responseSerializer 响应样式
+ @param header 请求头数据(字典)
+ @param cachePolicy 缓存策略
+ @param progresss 进度回调
+ @param callback 回调方法
+ @return 本次请求的task
+ */
+- (NSURLSessionTask *)nv_get:(NSString *)api
+                  parameters:(id)parameters
+           requestSerializer:(AFHTTPRequestSerializer *)requestSerializer
+          responseSerializer:(AFHTTPResponseSerializer *)responseSerializer
+                      header:(NSDictionary *)header
+                 cachePolicy:(NVCachePolicy)cachePolicy
+                    progress:(ProgressCallback)progresss
+                    callback:(NetworkCallback)callback;
+```
