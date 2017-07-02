@@ -1,9 +1,190 @@
 #带缓存机制的网络请求
 
-带缓存机制的网络请求包含未带缓存机制网络请求的所有功能, 使用方法也相同
-用力可以参考:
+各类请求有分带缓存 , 不带缓存, 可自定义, 默认请求头和解析头等几种方式
 
-[http://git.novasoftware.cn:3000/zhouxi/NVNetworking](http://git.novasoftware.cn:3000/zhouxi/NVNetworking)
+#没有缓存机制的网络请求库
+
+##初始化
+
+```objective-c
+//测试初始化
+_nvNetworking = [NVNetworking shareInstance];
+
+//测试设置beseUrl
+[_nvNetworking setBaseUrl:@"http://xdf-new-test.novasoftware.cn/api"];
+
+//测试设置需要授权
+[_nvNetworking setAuthorizationRequired:true];
+
+//检测网络监听
+[_nvNetworking startMonitorNetworkWithBlock:^(NVNetworkStatus status) {
+
+NSLog(@"status: %lu", status);
+}];
+
+```
+
+##默认请求样式
+```objective-c
+//使用默认请求样式:
+
+[_nvNetworking get:@"/open/ads" parameters:nil progress:^(NSProgress *downloadProgress) {
+
+NSLog(@"进度: %f", downloadProgress.fractionCompleted);
+} callback:^(ApiResult *result, id responseObject) {
+
+if (result.success) {
+
+NSLog(@"%@", result.data);
+}
+
+NSLog(@"请求结束后网络请求个数: %lu", (unsigned long)[[_nvNetworking getAllTask] count]);
+}];
+
+NSLog(@"请求结束前网络请求个数: %lu", (unsigned long)[[_nvNetworking getAllTask] count]);
+
+```
+
+##取消所有任务
+```objective-c
+[_nvNetworking cancelAllTask];
+```
+
+##取消特定api的请求
+```objective-c
+[_nvNetworking cancelTaskWithApi:@"open/ads"];
+```
+
+##带任务返回的请求Get/Post
+```objective-c
+NVNetworking *manager = [NVNetworking shareInstance];
+_task = [manager nv_get:@"/pushMessage/GetpushMessages?phonenumber=18502329837" parameters:nil progress:nil callback:^(ApiResult *result, id responseObject) {
+
+if (result.success) {
+
+NSLog(@"回调: %@", result.data);
+NSDictionary *dict = [result.data mj_keyValues];
+NSLog(@"dict: %@", dict);
+} else {
+
+NSLog(@"失败回调: %@", responseObject);
+NSLog(@"失败code: %i", result.error.code);
+}
+}];
+```
+
+##取消任务
+```objective-c
+[_task cancel];
+```
+
+##自定义请求样式
+```objective-c
+AFHTTPRequestSerializer *requestSerializer = [AFJSONRequestSerializer serializer];
+AFHTTPResponseSerializer *responseSerializer = [AFJSONResponseSerializer serializer];
+
+[_nvNetworking get:@"/open/ads" parameters:nil requestSerializer:requestSerializer responseSerializer:responseSerializer header:nil progress:^(NSProgress *downloadProgress) {
+
+NSLog(@"%f", downloadProgress.fractionCompleted);
+} callback:^(ApiResult *result, id responseObject) {
+
+NSLog(@"请求结束后网络请求个数: %lu", (unsigned long)[[_nvNetworking getAllTask] count]);
+if (result.success) {
+
+NSLog(@"%@", result.data);
+}
+}];
+```
+
+##网络监听
+```objective-c
+[_nvNetworking startMonitorNetworkWithBlock:^(NVNetworkStatus status) {
+
+switch (status) {
+case k3GNetwork:
+NSLog(@"3G网");
+break;
+
+case kWiFiNetwork:
+NSLog(@"wifi");
+break;
+
+case kNoNetwork:
+NSLog(@"没有网");
+break;
+default:
+break;
+}
+}];
+```
+
+##单个文件上传
+```objective-c
+UploadParam *uploadParam = [[UploadParam alloc] init];
+uploadParam.data = UIImagePNGRepresentation([UIImage imageNamed:@"1.png"]);
+uploadParam.name = @"1.png";
+uploadParam.fileName = @"1.png";
+uploadParam.mimeType = @"image/png";
+
+NVNetworking *manager = [NVNetworking shareInstance];
+[manager upload:@"/file/upload" parameters:nil uploadParam:uploadParam progress:^(NSProgress *progress) {
+
+NSLog(@"上传进度: %f", progress.fractionCompleted);
+} callback:^(ApiResult *result, id responseObject) {
+
+NSLog(@"结果: %@", responseObject);
+
+if (result.success) {
+
+NSLog(@"回调: %@", result.data);
+NSDictionary *dict = [result.data mj_keyValues];
+NSLog(@"dict: %@", dict);
+} else {
+
+NSLog(@"失败回调: %@", responseObject);
+NSLog(@"失败code: %i", result.error.code);
+}
+}];
+```
+
+##取消上传任务可以用
+```objective-c
+NVNetworking *manager = [NVNetworking shareInstance];
+[manager cancelTaskWithApi:@"/file/upload"];
+```
+
+##多任务上传
+```objective-c
+UploadParam *uploadParam = [[UploadParam alloc] init];
+uploadParam.data = UIImagePNGRepresentation([UIImage imageNamed:@"1.png"]);
+uploadParam.name = @"1.png";
+uploadParam.fileName = @"1.png";
+uploadParam.mimeType = @"image/png";
+
+UploadParam *uploadParam1 = [[UploadParam alloc] init];
+uploadParam1.data = UIImagePNGRepresentation([UIImage imageNamed:@"1.png"]);
+uploadParam1.name = @"1.png";
+uploadParam1.fileName = @"1.png";
+uploadParam1.mimeType = @"image/png";
+
+NSArray *array = @[uploadParam, uploadParam1];
+NVNetworking *manager = [NVNetworking shareInstance];
+
+[manager upload:@"/file/upload" parameters:nil uploadParams:array progress:^(NSProgress *progress, NSInteger completeCount, NSInteger totalCount, NSInteger failCount, BOOL taskCompleted) {
+
+NSLog(@"progress: %f, completeCount: %li, totalCount: %li, failCount: %li, taskCompleted: %@", progress.fractionCompleted, (long)completeCount, (long)totalCount, (long)failCount, taskCompleted ? @"YES": @"NO");
+} callback:^(NSInteger completeCount, NSInteger totalCount, NSInteger failCount, BOOL taskCompleted) {
+
+NSLog(@"completeCount: %li, totalCount: %li, failCount: %li, taskCompleted: %@", (long)completeCount, (long)totalCount, (long)failCount, taskCompleted ? @"YES": @"NO");
+
+}];
+```
+
+##取消多任务上传
+```objective-c
+NVNetworking *manager = [NVNetworking shareInstance];
+[manager cancelUploadFile];
+```
 
 ##缓存策略有以下几种
 ```objective-c
