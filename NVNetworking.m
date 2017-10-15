@@ -24,7 +24,7 @@
 
 @property (nonatomic, assign) BOOL                  authorizationRequired;
 
-@property (nonatomic, assign) NSString              *accessToken;
+@property (nonatomic, strong) NSString              *accessToken;
 
 @property (nonatomic, assign) NVNetworkStatus       netStatus;
 
